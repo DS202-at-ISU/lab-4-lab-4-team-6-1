@@ -1,0 +1,71 @@
+---
+title: "Data joining"
+author: "Naomi"
+date: "2025-04-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{R}
+library(rvest)
+library(Lahman)
+library(dplyr)
+library(ggplot2)
+
+
+url <- "https://www.baseball-reference.com/awards/hof_2025.shtml"
+html <- read_html(url)
+html
+
+tables <- html %>% html_table(fill=TRUE)
+
+playerStats <- tables[[1]]  # candidates on the BBWAA Ballot
+classicEra <- tables[[2]] # Early Baseball Era Committee
+playerStats %>% head()
+classicEra %>% head()
+
+
+head(HallOfFame, 3)
+
+HallOfFame %>% head()
+
+#data$Votes <- as.numeric(data$Votes)
+
+data <- tables[[1]]
+actual_col_names <- data[1, ]
+colnames(data) <- actual_col_names
+data <- data[-1, ]
+head(data, 3)
+
+readr::parse_number(c("34%", "10th", "1.0"))
+
+x <- c("David Ortiz", "X-Barry Bonds", "X-Roger Clemens")
+gsub("X-", "Oh no! ", x)
+
+gsub("X-", "", x)
+
+
+
+
+
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2024))
+```
+
+
+
+```{R}
+# Someone else already did the step of addign the csv online, which was very helpful
+#write.csv(HallOfFame, file="C:\\Users\\songb\\Desktop\\labfour.xlsx", row.names = FALSE)
+
+```
+
+
+
+
