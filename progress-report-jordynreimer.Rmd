@@ -1,0 +1,61 @@
+---
+title: "progress-report-jordynreimer"
+author: "Jordyn Reimer"
+date: "2025-04-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(ggplot2)
+library(Lahman)
+```
+
+```{r}
+url <- "https://www.baseball-reference.com/awards/hof_2025.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+data <- tables[[1]]
+actual_col_names <- data[1, ]
+colnames(data) <- actual_col_names
+data <- data[-1, ]
+head(data, 3)
+data$Votes <- as.numeric(data$Votes)
+data$Name <- trimws(gsub("X-", "", data$Name))
+data <- type.convert(data, as.is = TRUE)
+readr::parse_number(c("34%", "10th", "1.0"))
+x <- c("David Ortiz", "X-Barry Bonds", "X-Roger Clemens")
+gsub("X-", "Oh no! ", x)
+gsub("X-", "", x)
+x1 <- data.frame(id=1:2, name=c("A", "B"))
+x2 <- data.frame(id=3:4, name=c("C", "D"))
+rbind(x1, x2)
+dframe <- rbind(x1, x2)
+write.csv(dframe, file="some-file.csv", row.names = FALSE)
+readr::write_csv(dframe, file="some-other-file.csv")
+```
+
+```{r}
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2024))
+```
+
+
+```{r}
+hof <- Lahman::HallOfFame
+hof %>% 
+  ggplot(aes(x = yearID, y = votes/needed*100, group=playerID)) +
+  geom_hline(yintercept = 100, colour="grey70") + 
+  geom_line() +
+  geom_point(aes(colour = "inducted"), 
+    data = hof %>% filter(inducted=="Y")) +
+  xlim(c(2000, 2022)) +
+  ylab("Percent of votes")
+```
