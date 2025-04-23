@@ -7,6 +7,8 @@ output: github_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(rvest)
+library(stringi)
 ```
 
 # Lab report #4 - instructions
@@ -17,14 +19,73 @@ All submissions to the github repo will be automatically uploaded for grading on
 
 # Lab 4: Scraping (into) the Hall of Fame
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-hof <- Lahman::HallOfFame
-hof %>% 
-  ggplot(aes(x = yearID, y = votes/needed*100, group=playerID)) +
-  geom_hline(yintercept = 100, colour="grey70") + 
-  geom_line() +
-  geom_point(aes(colour = "inducted"), 
-    data = hof %>% filter(inducted=="Y")) +
-  xlim(c(2000, 2022)) +
-  ylab("Percent of votes")
+```{r}
+url <- "https://www.baseball-reference.com/awards/hof_2025.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+
+head(tables[[1]], 3) # The column headers are first in row 1
+
+data <- tables[[1]]
+actual_col_names <- data[1, ]
+colnames(data) <- actual_col_names
+data <- data[-1, ]
+head(data, 3) # Now the column Headers are not in row 1
+
+# Select only the columns that we are interested in
+data <- data[, 1:5]
+
+# The % Vote column has the % inside the values. The % should be removed
+data$`%vote` <- gsub("%", "", data$`%vote`)
+
+# Additionally, YoB is in the format "1st" "10th", etc. This will be changed to "1", "10", etc.
+data$YoB <- readr::parse_number(data$YoB)
+
+# Additionally, some names have "X-" in front of them
+data$Name <- gsub("X-", "", data$Name)
+
+# Now the data values should be good
+head(data)
+
+str(data) # Check datatypes 
+data$Rk <- as.numeric(data$Rk)
+data$Votes <- as.numeric(data$Votes)
+data$`%vote` <- as.numeric(data$`%vote`)
+str(data) # Now numeric datatypes are numericS
+
+library(Lahman) # To get HallOfFame dataset
+
+# Currently some players have accents in them. Remove them so the playerID from People can be in the data dataframe
+data <- data %>%
+  mutate(Name = stri_trans_general(Name, "Latin-ASCII"))
+
+# Match the playerID from People dataframe to the data dataframe
+People <- People %>%
+  mutate(fullName = paste(nameFirst, nameLast, sep = " "))
+data <- data %>%
+  left_join(People %>% select(fullName, playerID), by = c("Name" = "fullName"))
+
+# Create a new dataframe containing the new 2025 data in the HallOfFame data format
+hof2025 <- data %>%
+  mutate(
+    yearID = 2025,
+    votedBy = "BBWAA",
+    ballots = round(Votes / (`%vote` / 100)),  
+    needed = round(ballots * 0.75), 
+    inducted = ifelse(Votes > needed, "Y", "N"),
+    category = "Player",
+    needed_vote = NA 
+  ) %>%
+  select(playerID, yearID, votedBy, ballots, needed, votes = Votes, inducted, category, needed_vote)
+colnames(hof2025) <- names(HallOfFame)
+HallOfFame <- rbind(HallOfFame, hof2025)
+
+# Output a csv
+readr::write_csv(HallOfFame, file="HallOfFame.csv")
+
+# New graph including 2025 data
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2025))
 ```
