@@ -1,0 +1,85 @@
+---
+title: "progress-report-ghammond9"
+author: "Gwen Hammond"
+date: "2025-04-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+hof <- Lahman::HallOfFame
+hof %>% 
+  ggplot(aes(x = yearID, y = votes/needed*100, group=playerID)) +
+  geom_hline(yintercept = 100, colour="grey70") + 
+  geom_line() +
+  geom_point(aes(colour = "inducted"), 
+    data = hof %>% filter(inducted=="Y")) +
+  xlim(c(2000, 2022)) +
+  ylab("Percent of votes")
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(stringr)
+library(Lahman)
+library(ggplot2)
+library(readr)      # For efficient writing of CSV
+
+
+url <- "https://www.baseball-reference.com/awards/hof_2025.shtml"
+
+# Read the HTML from the webpage
+html <- read_html(url)
+
+# Extract tables from the HTML
+tables <- html_table(html)
+
+# Extract the first table from the list of tables
+data <- tables[[1]]
+
+# Display the first few rows 
+head(data)
+
+# Get the actual column names from the first row
+actual_col_names <- data[1, ]
+colnames(data) <- actual_col_names  # Set the column names
+data <- data[-1, ]  # Remove the first row with column names
+
+# Convert columns to numeric as needed
+data$Votes <- as.numeric(data$Votes)
+data$`%vote` <- parse_number(data$`%vote`)  # Handle percentages
+data$WAR <- as.numeric(data$WAR)
+data$JAWS <- as.numeric(data$JAWS)
+
+# Clean any special characters (e.g., ordinal suffixes)
+data$YoB <- gsub("(\\d+)(st|nd|rd|th)", "\\1", data$YoB)
+
+# Display the cleaned data
+head(data)
+
+# Create a bar plot to show the number of inductees by year
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2024))
+
+# Save the cleaned data to a CSV file
+write_csv(data, file = "hof_2025_data.csv")
+
+# Confirmation message
+cat("The data has been saved to 'hof_2025_data.csv'.")
+
+
+```
+
+Notes: I am having problems getting mine to show up in the repository.
