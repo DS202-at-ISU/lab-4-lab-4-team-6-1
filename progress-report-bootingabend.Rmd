@@ -15,6 +15,8 @@ library(rvest)
 library(Lahman)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
+library(tidyverse)
 
 
 url <- "https://www.baseball-reference.com/awards/hof_2025.shtml"
@@ -28,6 +30,8 @@ classicEra <- tables[[2]] # Early Baseball Era Committee
 playerStats %>% head()
 classicEra %>% head()
 
+
+#playerStats %>% row_to_nam
 
 head(HallOfFame, 3)
 
@@ -48,7 +52,16 @@ gsub("X-", "Oh no! ", x)
 
 gsub("X-", "", x)
 
+names(playerStats) <- c("miles_gallon", "cylinders", "display", "horsepower")
 
+
+
+#playerStats %>% separate(`.1`, c('First', 'Last'))
+
+
+#playerStats <- playerStats %>% left_join(
+#  People %>% select(`First Lastname`, playerID), 
+#  by="First Lastname")
 
 
 
